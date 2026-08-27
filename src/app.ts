@@ -1,4 +1,6 @@
 import express from "express";
+import { serve, setup } from "swagger-ui-express";
+import { swaggerSpec } from "./config/swagger.ts";
 import { createAuthRouter } from "./routes/auth.routes.ts";
 import { createUsersRouter } from "./routes/users.routes.ts";
 import { createPostsRouter } from "./routes/posts.routes.ts";
@@ -15,6 +17,11 @@ export function createApp() {
 
   app.get("/health", (req, res) => {
     res.json({ status: "ok" });
+  });
+
+  app.use("/api-docs", serve, setup(swaggerSpec));
+  app.get("/api-docs.json", (req, res) => {
+    res.json(swaggerSpec);
   });
 
   app.use("/auth", createAuthRouter());
