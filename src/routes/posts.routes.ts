@@ -5,6 +5,7 @@ import { z } from "zod";
 import {
   getAllPosts,
   getPostById,
+  getPostByIdWithDetails,
   createPost,
   updatePost,
   deletePost,
@@ -13,23 +14,7 @@ import {
 import { createAuthMiddleware, type AuthRequest } from "../middleware/auth.middleware.ts";
 import { uploadImage } from "../middleware/upload.middleware.ts";
 import { usePrivateKey } from "../config/env.ts";
-
-const createPostSchema = z
-  .object({
-    title: z.string().min(1).max(255),
-    body: z.string().min(1),
-  })
-  .strict();
-
-const updatePostSchema = z
-  .object({
-    title: z.string().min(1).max(255).optional(),
-    body: z.string().min(1).optional(),
-  })
-  .strict()
-  .refine((data) => data.title !== undefined || data.body !== undefined, {
-    message: "Mindestens ein Feld (title oder body) muss angegeben werden",
-  });
+import { createPostSchema, updatePostSchema } from "./posts.schemas.ts";
 
 const listQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
@@ -102,7 +87,7 @@ export function createPostsRouter() {
    *           type: integer
    *     responses:
    *       200:
-   *         description: Der angeforderte Beitrag
+   *         description: Der angeforderte Beitrag inklusive comments- und links-Arrays
    *       400:
    *         description: Ungültige ID
    *       401:
@@ -117,7 +102,7 @@ export function createPostsRouter() {
       return;
     }
 
-    const post = await getPostById(parsedId.data);
+    const post = await getPostByIdWithDetails(parsedId.data);
     if (!post) {
       res.status(404).json({ message: "Beitrag nicht gefunden" });
       return;

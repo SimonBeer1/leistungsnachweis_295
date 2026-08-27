@@ -1,5 +1,7 @@
 import type { RowDataPacket, ResultSetHeader } from "mysql2/promise";
 import { db } from "../config/db.ts";
+import { getCommentsByPostId } from "./comments.service.ts";
+import { getLinksByPostId } from "./links.service.ts";
 
 interface PostRow extends RowDataPacket {
   id: number;
@@ -49,4 +51,18 @@ export async function deletePost(id: number) {
 export async function setPostImage(id: number, filename: string) {
   await db.execute("UPDATE posts SET image_filename = ? WHERE id = ?", [filename, id]);
   return getPostById(id);
+}
+
+export async function getPostByIdWithDetails(id: number) {
+  const post = await getPostById(id);
+  if (!post) {
+    return null;
+  }
+
+  const [comments, links] = await Promise.all([
+    getCommentsByPostId(id),
+    getLinksByPostId(id),
+  ]);
+
+  return { ...post, comments, links };
 }

@@ -28,6 +28,8 @@ id: 3
 npm install
 npm test
 
+Zwei Unit-Tests für die Post Validierung (`src/validation.test.ts`): prüfen, dass das Zod einen leeren Titel ablehnt und einen gültigen Post akzeptiert.
+
 # Entscheidungen
 
 - `createApp()` ohne `listen()` ist testbar mit Supertest, kein Server nötig.
@@ -39,7 +41,7 @@ npm test
 
 # KI-Einsatz
 
-Ich habe Claude für die Planung vom Projekt und teils zur umsetzung vom Projekt benutzt.
+Ich habe Claude für die Planung vom Projekt und zur umsetzung vom Projekt benutzt.
 Dazu habe ich auch noch Claude Code benutzt, hauptsächlich für Debugging bei Tests in Postman.
 
 # Nicht umgesetzt und wie ich es angehen würde
