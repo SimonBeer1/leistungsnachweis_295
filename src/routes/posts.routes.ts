@@ -42,6 +42,38 @@ export function createPostsRouter() {
   const router = Router();
   const authMiddleware = createAuthMiddleware(usePrivateKey());
 
+  /**
+   * @swagger
+   * /posts:
+   *   get:
+   *     summary: Alle Beiträge auflisten (paginiert)
+   *     tags: [Posts]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: query
+   *         name: limit
+   *         schema:
+   *           type: integer
+   *           minimum: 1
+   *           maximum: 100
+   *           default: 20
+   *         description: Maximale Anzahl an Beiträgen
+   *       - in: query
+   *         name: offset
+   *         schema:
+   *           type: integer
+   *           minimum: 0
+   *           default: 0
+   *         description: Anzahl zu überspringender Beiträge
+   *     responses:
+   *       200:
+   *         description: Liste der Beiträge
+   *       400:
+   *         description: Ungültige Pagination-Parameter
+   *       401:
+   *         description: Token fehlt, ist ungültig oder abgelaufen
+   */
   router.get("/", authMiddleware, async (req, res) => {
     const parsed = listQuerySchema.safeParse(req.query);
     if (!parsed.success) {
@@ -54,6 +86,30 @@ export function createPostsRouter() {
     res.status(200).json(posts);
   });
 
+  /**
+   * @swagger
+   * /posts/{id}:
+   *   get:
+   *     summary: Einzelnen Beitrag abrufen
+   *     tags: [Posts]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: integer
+   *     responses:
+   *       200:
+   *         description: Der angeforderte Beitrag
+   *       400:
+   *         description: Ungültige ID
+   *       401:
+   *         description: Token fehlt, ist ungültig oder abgelaufen
+   *       404:
+   *         description: Beitrag nicht gefunden
+   */
   router.get("/:id", authMiddleware, async (req, res) => {
     const parsedId = idParamSchema.safeParse(req.params.id);
     if (!parsedId.success) {
@@ -70,6 +126,37 @@ export function createPostsRouter() {
     res.status(200).json(post);
   });
 
+  /**
+   * @swagger
+   * /posts:
+   *   post:
+   *     summary: Neuen Beitrag erstellen
+   *     tags: [Posts]
+   *     security:
+   *       - bearerAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [title, body]
+   *             properties:
+   *               title:
+   *                 type: string
+   *                 minLength: 1
+   *                 maxLength: 255
+   *               body:
+   *                 type: string
+   *                 minLength: 1
+   *     responses:
+   *       201:
+   *         description: Beitrag erfolgreich erstellt
+   *       400:
+   *         description: Ungültige Eingabe
+   *       401:
+   *         description: Token fehlt, ist ungültig oder abgelaufen
+   */
   router.post("/", authMiddleware, async (req, res) => {
     const parsed = createPostSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -83,6 +170,47 @@ export function createPostsRouter() {
     res.status(201).json(post);
   });
 
+  /**
+   * @swagger
+   * /posts/{id}:
+   *   patch:
+   *     summary: Beitrag aktualisieren (Titel und/oder Inhalt)
+   *     tags: [Posts]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: integer
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             description: Mindestens eines der beiden Felder muss angegeben werden
+   *             properties:
+   *               title:
+   *                 type: string
+   *                 minLength: 1
+   *                 maxLength: 255
+   *               body:
+   *                 type: string
+   *                 minLength: 1
+   *     responses:
+   *       200:
+   *         description: Aktualisierter Beitrag
+   *       400:
+   *         description: Ungültige ID oder ungültige Eingabe
+   *       401:
+   *         description: Token fehlt, ist ungültig oder abgelaufen
+   *       403:
+   *         description: Keine Berechtigung
+   *       404:
+   *         description: Beitrag nicht gefunden
+   */
   router.patch("/:id", authMiddleware, async (req, res) => {
     const parsedId = idParamSchema.safeParse(req.params.id);
     if (!parsedId.success) {
@@ -114,6 +242,32 @@ export function createPostsRouter() {
     res.status(200).json(updatedPost);
   });
 
+  /**
+   * @swagger
+   * /posts/{id}:
+   *   delete:
+   *     summary: Beitrag löschen
+   *     tags: [Posts]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: integer
+   *     responses:
+   *       204:
+   *         description: Beitrag erfolgreich gelöscht
+   *       400:
+   *         description: Ungültige ID
+   *       401:
+   *         description: Token fehlt, ist ungültig oder abgelaufen
+   *       403:
+   *         description: Keine Berechtigung
+   *       404:
+   *         description: Beitrag nicht gefunden
+   */
   router.delete("/:id", authMiddleware, async (req, res) => {
     const parsedId = idParamSchema.safeParse(req.params.id);
     if (!parsedId.success) {
@@ -137,6 +291,43 @@ export function createPostsRouter() {
     res.status(204).send();
   });
 
+  /**
+   * @swagger
+   * /posts/{id}/image:
+   *   post:
+   *     summary: Bild zu einem Beitrag hochladen
+   *     tags: [Posts]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: integer
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         multipart/form-data:
+   *           schema:
+   *             type: object
+   *             required: [image]
+   *             properties:
+   *               image:
+   *                 type: string
+   *                 format: binary
+   *     responses:
+   *       200:
+   *         description: Beitrag mit aktualisiertem Bild
+   *       400:
+   *         description: Ungültige ID oder kein gültiges Bild hochgeladen
+   *       401:
+   *         description: Token fehlt, ist ungültig oder abgelaufen
+   *       403:
+   *         description: Keine Berechtigung
+   *       404:
+   *         description: Beitrag nicht gefunden
+   */
   router.post("/:id/image", authMiddleware, uploadImage.single("image"), async (req, res) => {
     const parsedId = idParamSchema.safeParse(req.params.id);
     if (!parsedId.success) {

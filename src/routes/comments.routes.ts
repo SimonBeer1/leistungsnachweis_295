@@ -22,6 +22,31 @@ export function createCommentsRouter() {
   const router = Router();
   const authMiddleware = createAuthMiddleware(usePrivateKey());
 
+  /**
+   * @swagger
+   * /posts/{id}/comments:
+   *   get:
+   *     summary: Kommentare zu einem Beitrag auflisten
+   *     tags: [Comments]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: integer
+   *         description: ID des Beitrags
+   *     responses:
+   *       200:
+   *         description: Liste der Kommentare
+   *       400:
+   *         description: Ungültige ID
+   *       401:
+   *         description: Token fehlt, ist ungültig oder abgelaufen
+   *       404:
+   *         description: Beitrag nicht gefunden
+   */
   router.get("/posts/:id/comments", authMiddleware, async (req, res) => {
     const parsedId = idParamSchema.safeParse(req.params.id);
     if (!parsedId.success) {
@@ -39,6 +64,42 @@ export function createCommentsRouter() {
     res.status(200).json(comments);
   });
 
+  /**
+   * @swagger
+   * /posts/{id}/comments:
+   *   post:
+   *     summary: Kommentar zu einem Beitrag erstellen
+   *     tags: [Comments]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: integer
+   *         description: ID des Beitrags
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [body]
+   *             properties:
+   *               body:
+   *                 type: string
+   *                 minLength: 1
+   *     responses:
+   *       201:
+   *         description: Kommentar erfolgreich erstellt
+   *       400:
+   *         description: Ungültige ID oder ungültige Eingabe
+   *       401:
+   *         description: Token fehlt, ist ungültig oder abgelaufen
+   *       404:
+   *         description: Beitrag nicht gefunden
+   */
   router.post("/posts/:id/comments", authMiddleware, async (req, res) => {
     const parsedId = idParamSchema.safeParse(req.params.id);
     if (!parsedId.success) {
@@ -63,6 +124,33 @@ export function createCommentsRouter() {
     res.status(201).json(comment);
   });
 
+  /**
+   * @swagger
+   * /comments/{id}:
+   *   delete:
+   *     summary: Kommentar löschen
+   *     tags: [Comments]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: integer
+   *         description: ID des Kommentars
+   *     responses:
+   *       204:
+   *         description: Kommentar erfolgreich gelöscht
+   *       400:
+   *         description: Ungültige ID
+   *       401:
+   *         description: Token fehlt, ist ungültig oder abgelaufen
+   *       403:
+   *         description: Keine Berechtigung
+   *       404:
+   *         description: Kommentar nicht gefunden
+   */
   router.delete("/comments/:id", authMiddleware, async (req, res) => {
     const parsedId = idParamSchema.safeParse(req.params.id);
     if (!parsedId.success) {
