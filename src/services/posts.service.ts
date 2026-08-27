@@ -45,3 +45,8 @@ export async function deletePost(id: number) {
   const [result] = await db.execute<ResultSetHeader>("DELETE FROM posts WHERE id = ?", [id]);
   return result.affectedRows > 0;
 }
+
+export async function setPostImage(id: number, filename: string) {
+  await db.execute("UPDATE posts SET image_filename = ? WHERE id = ?", [filename, id]);
+  return getPostById(id);
+}

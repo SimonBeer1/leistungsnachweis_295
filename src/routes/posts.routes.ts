@@ -1,3 +1,5 @@
+import { unlink } from "node:fs/promises";
+import { join } from "node:path";
 import { Router } from "express";
 import { z } from "zod";
 import {
@@ -6,8 +8,10 @@ import {
   createPost,
   updatePost,
   deletePost,
+  setPostImage,
 } from "../services/posts.service.ts";
 import { createAuthMiddleware, type AuthRequest } from "../middleware/auth.middleware.ts";
+import { uploadImage } from "../middleware/upload.middleware.ts";
 import { usePrivateKey } from "../config/env.ts";
 
 const createPostSchema = z
@@ -131,6 +135,43 @@ export function createPostsRouter() {
 
     await deletePost(parsedId.data);
     res.status(204).send();
+  });
+
+  router.post("/:id/image", authMiddleware, uploadImage.single("image"), async (req, res) => {
+    const parsedId = idParamSchema.safeParse(req.params.id);
+    if (!parsedId.success) {
+      res.status(400).json({ message: "Ungültige ID" });
+      return;
+    }
+
+    if (!req.file) {
+      res.status(400).json({ message: "Kein gültiges Bild hochgeladen" });
+      return;
+    }
+    const uploadedFile = req.file;
+
+    const existingPost = await getPostById(parsedId.data);
+    if (!existingPost) {
+      res.status(404).json({ message: "Beitrag nicht gefunden" });
+      return;
+    }
+
+    const { userId, role } = (req as AuthRequest).user;
+    if (existingPost.user_id !== userId && role !== "admin") {
+      res.status(403).json({ message: "Keine Berechtigung" });
+      return;
+    }
+
+    if (existingPost.image_filename) {
+      try {
+        await unlink(join("uploads", existingPost.image_filename));
+      } catch (error) {
+        console.error("Konnte altes Bild nicht löschen:", error);
+      }
+    }
+
+    const updatedPost = await setPostImage(parsedId.data, uploadedFile.filename);
+    res.status(200).json(updatedPost);
   });
 
   return router;
